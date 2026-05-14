@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/auth';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const [formData, setFormData] = useState({ name: '', email: '', store: '', password: '' });
   const [loading, setLoading] = useState(false);
 
@@ -136,8 +136,12 @@ export default function SignUpPage() {
              <button className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-black hover:bg-white/90 transition-all text-xs font-bold">
                 Connect Shopify
              </button>
-             <button className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-xs font-bold">
-                Google
+             <button 
+               type="button" 
+               onClick={signInWithGoogle} 
+               className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-xs font-bold"
+             >
+                <img src="https://www.google.com/favicon.ico" className="w-4 h-4 opacity-70" alt="Google" /> Google
              </button>
           </div>
 

@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth';
 
 export default function SignInPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -105,8 +105,12 @@ export default function SignInPage() {
              <button className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium">
                 <Globe className="w-4 h-4" /> GitHub
              </button>
-             <button className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium">
-                <img src="https://www.google.com/favicon.ico" className="w-4 h-4 opacity-70" /> Google
+             <button 
+               type="button" 
+               onClick={signInWithGoogle} 
+               className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium"
+             >
+                <img src="https://www.google.com/favicon.ico" className="w-4 h-4 opacity-70" alt="Google" /> Google
              </button>
           </div>
 

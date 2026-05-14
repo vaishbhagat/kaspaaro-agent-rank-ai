@@ -4,6 +4,7 @@ import { runScoringEngine } from '@/lib/scorer';
 import { generateAiPerception, rewriteProductDescriptions } from '@/lib/ai-insights';
 import { generateMockShopifyData } from '@/lib/mock-data';
 import { AnalysisResult } from '@/types/analysis';
+import { supabase } from '@/lib/supabase';
 
 export const maxDuration = 60; // 60s timeout for AI calls
 
@@ -21,10 +22,10 @@ export async function GET(req: NextRequest) {
     // Step 1 — Fetch real Shopify data
     let shopifyData = await fetchShopifyData(storeHost);
 
-    // HACKATHON FALLBACK: If real data fails, use Mock data to ensure a demo works
+    // If real data fails, return an error instead of using mock data
     if (shopifyData.error) {
-      console.warn(`[analyze] Real fetch failed for ${storeHost}, falling back to mock data. Error: ${shopifyData.error}`);
-      shopifyData = generateMockShopifyData(storeHost);
+      console.warn(`[analyze] Real fetch failed for ${storeHost}. Error: ${shopifyData.error}`);
+      return NextResponse.json({ error: shopifyData.error }, { status: 400 });
     }
 
     // Step 2 — Run deterministic scoring
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
         { subject: 'Trust', A: breakdown.trustSignals.score, fullMark: 100 },
         { subject: 'Metadata', A: breakdown.metadataQuality.score, fullMark: 100 },
       ],
-      // Trend data is simulated (no historical data without DB)
+      // Trend data placeholder (will be overwritten if real data exists)
       trendData: [
         { week: '3w ago', score: Math.max(10, overallScore - 18) },
         { week: '2w ago', score: Math.max(10, overallScore - 10) },
@@ -68,6 +69,57 @@ export async function GET(req: NextRequest) {
       productCount: shopifyData.products.length,
       pageCount: shopifyData.pages.length,
     };
+
+    // Step 4.5 — Fetch real trend data from Supabase if available
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      try {
+        const { data: history } = await supabase
+          .from('analyses')
+          .select('created_at, overall_score')
+          .eq('store_url', storeHost)
+          .order('created_at', { ascending: true }); // older to newer
+
+        if (history && history.length > 0) {
+          // Take up to the last 3 historical runs to form the trend with today's run
+          const recent = history.slice(-3);
+          const realTrendData = [];
+          
+          for (let i = 0; i < recent.length; i++) {
+            const date = new Date(recent[i].created_at);
+            realTrendData.push({
+              week: `${date.getMonth()+1}/${date.getDate()}`,
+              score: recent[i].overall_score
+            });
+          }
+          realTrendData.push({ week: 'Today', score: overallScore });
+          result.trendData = realTrendData;
+        }
+      } catch (e) {
+        console.error('[analyze] Failed to fetch trend data:', e);
+      }
+    }
+
+    // Step 5 — Save to Supabase DB if configured
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      try {
+        const { error } = await supabase
+          .from('analyses')
+          .insert([
+            {
+              store_url: storeHost,
+              store_name: shopifyData.storeName,
+              overall_score: overallScore,
+              result_data: result,
+              created_at: new Date().toISOString(),
+            }
+          ]);
+        if (error) {
+          console.error('[analyze] Supabase insert error:', error);
+        }
+      } catch (dbErr) {
+        console.error('[analyze] DB error:', dbErr);
+      }
+    }
 
     return NextResponse.json(result, {
       headers: {

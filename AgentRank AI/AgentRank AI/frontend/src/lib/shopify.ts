@@ -69,8 +69,15 @@ export async function fetchShopifyData(storeHost: string): Promise<ShopifyRawDat
     collectionsData?.collections?.[0]?.title ||
     storeHost.replace('.myshopify.com', '').replace(/-/g, ' ');
 
+  // Normalize tags to string (Shopify sometimes returns tags as an array)
+  let products = productsData?.products ?? [];
+  products = products.map(p => ({
+    ...p,
+    tags: Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || '')
+  }));
+
   return {
-    products: productsData?.products ?? [],
+    products,
     pages: pagesData?.pages ?? [],
     collections: collectionsData?.collections ?? [],
     blogs: blogsData?.blogs ?? [],
