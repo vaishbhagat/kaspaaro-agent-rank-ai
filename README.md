@@ -6,6 +6,11 @@ AgentRank AI is a SaaS-style web application that helps Shopify merchants unders
 
 It analyzes product content, policies, FAQs, trust signals, and metadata to generate an AI Commerce Readiness Score along with improvement recommendations.
 
+## Demo Video
+
+🎥 Demo Video:  
+https://youtu.be/bdwSUJRPcsA?si=1nr90k9r2mx162rT
+
 ## Problem Statement
 
 Most Shopify stores are not optimized for AI-based product discovery. This leads to:
